@@ -28,8 +28,9 @@ export default {
   margin-top: 30px;
   background: #eee;
   padding: 20px;
-  text-align: left;
+  text-align: center;
 }
+
 .historico ul { list-style: none; padding: 0; }
 .historico li { padding: 8px 0; border-bottom: 1px solid #ccc; }
 </style>

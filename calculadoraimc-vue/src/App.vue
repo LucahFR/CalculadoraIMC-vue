@@ -99,7 +99,7 @@ export default {
       }
       return ''
     },
-    
+
   },
 
   methods: {
@@ -170,7 +170,6 @@ h2 { margin-bottom: 30px; }
 }
 
 .caixaButton {
-  border: 4px solid gray;
   color: rgba(255, 255, 255, 0.801);
   background-color: rgb(0, 0, 0);
   padding: 3% 10%;
