@@ -3,9 +3,9 @@
     <h3>Histórico</h3>
     <ul>
       <li v-for="(item, i) in store.historico" :key="i">
-        <strong>{{ item.nome }}</strong> — {{ item.peso }} kg / {{ item.altura }} m
-        → IMC <strong>{{ item.imc }}</strong> ({{ item.classificacao }})
-        <small> — {{ item.data }}</small>
+        <strong>{{ item.nome }}</strong> - {{ item.peso }} kg | {{ item.altura }} m
+        → IMC <strong>{{ item.imc }}</strong> <br> ({{ item.classificacao }})
+        <small> <br> {{ item.data }}</small>
       </li>
     </ul>
     <button class="caixaButton" @click="store.limpar()">Limpar histórico</button>
