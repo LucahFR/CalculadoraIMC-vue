@@ -4,7 +4,12 @@
       <h2>Calculadora IMC</h2>
 
       <div class="divDados">
-        Nome <input v-model="nome" type="text" placeholder="Ex: Paulo">
+        Nome <input 
+        v-model="nome" 
+        type="text" 
+        placeholder="Ex: Paulo"
+        @input="filtrarNome"
+        >
       </div>
 
       <div class="divDados">
@@ -15,37 +20,88 @@
         Altura (m) <input v-model="altura" type="text" inputmode="decimal" placeholder="Ex: 1.74">
       </div>
 
-      <button class="caixaButton" @click="calcular">Calcular</button>
-
-      <p v-if="erro" class="erro">{{ erro }}</p>
-
-      <div v-if="resultado !== null" class="resultado">
-        <p><strong>{{ nome }}</strong>, seu IMC é <strong>{{ resultado }}</strong></p>
-        <p>{{ classificacao }}</p>
+      <div class="resultado">
+        <p>
+          <strong>{{ nome || 'Visitante' }}</strong>,
+          seu IMC é <strong>{{ resultado }}</strong>
+        </p>
+        <p v-if="classificacao">{{ classificacao }}</p>
+        <p v-if="erroLimite" class="erro-limite">{{ erroLimite }}</p>
       </div>
+
+      <button
+        class="caixaButton"
+        :disabled="imc === null"
+        @click="salvar"
+      >
+        Salvar no histórico
+      </button>
+
+      <p v-if="mensagem" :class="['mensagem', mensagemTipo]">
+        {{ mensagem }}
+      </p>
     </div>
 
-    <imc />
+    <historicoImc />
   </div>
 </template>
 
 <script>
-import imc from './components/historicoImc.vue'
+import historicoImc from './components/historicoImc.vue'
 import { useImcStore } from './stores/imc'
+
+const ALTURA_MAX = 2.72
+const PESO_MAX = 635
 
 export default {
   name: 'App',
-  components: { imc },
+  components: { historicoImc },
+
   data() {
     return {
       nome: '',
       peso: '',
       altura: '',
-      resultado: null,
-      classificacao: '',
-      erro: ''
+      mensagem: '',
+      mensagemTipo: '', 
+      timerMensagem: null
     }
   },
+
+  computed: {
+    imc() {
+      const p = this.paraNumero(this.peso)
+      const a = this.paraNumero(this.altura)
+
+      if (isNaN(p) || p <= 0) return null
+      if (isNaN(a) || a <= 0) return null
+
+      if (a > ALTURA_MAX) return null
+      if (p > PESO_MAX)   return null
+      return p / (a * a)
+    },
+    resultado() {
+      return this.imc === null ? 'N/A' : this.imc.toFixed(2)
+    },
+    classificacao() {
+      return this.imc === null ? '' : this.classificar(this.imc)
+    },
+  
+    erroLimite() {
+      const p = this.paraNumero(this.peso)
+      const a = this.paraNumero(this.altura)
+
+      if (!isNaN(a) && a > ALTURA_MAX) {
+        return `Altura máxima permitida: ${ALTURA_MAX} m (recorde mundial).`
+      }
+      if (!isNaN(p) && p > PESO_MAX) {
+        return `Peso máximo permitido: ${PESO_MAX} kg (recorde mundial).`
+      }
+      return ''
+    },
+    
+  },
+
   methods: {
     paraNumero(valor) {
       return parseFloat(String(valor).replace(',', '.'))
@@ -60,29 +116,47 @@ export default {
       return 'Obesidade grau III'
     },
 
-    calcular() {
-      this.erro = ''
+    salvar() {
+      if (this.imc === null) return
 
-      const peso   = this.paraNumero(this.peso)
-      const altura = this.paraNumero(this.altura)
-
-      if (!this.nome.trim())               return (this.erro = 'Informe o nome.')
-      if (isNaN(peso)   || peso   <= 0)    return (this.erro = 'Peso inválido.')
-      if (isNaN(altura) || altura <= 0)    return (this.erro = 'Altura inválida.')
-
-      const imc = peso / (altura * altura)
-      this.resultado   = imc.toFixed(2)
-      this.classificacao = this.classificar(imc)
-
-      useImcStore().adicionar({
-        nome: this.nome,
-        peso,
-        altura,
+      const salvou = useImcStore().adicionar({
+        nome: this.limparNome(this.nome) || 'Visitante',
+        peso: this.paraNumero(this.peso),
+        altura: this.paraNumero(this.altura),
         imc: this.resultado,
         classificacao: this.classificacao,
         data: new Date().toLocaleString('pt-BR')
       })
-    }
+
+      if (salvou) {
+        this.mostrarMensagem('Salvo no histórico!', 'ok')
+      } else {
+        this.mostrarMensagem('Esse peso/altura já está no histórico.', 'erro')
+      }
+    },
+
+    mostrarMensagem(texto, tipo) {
+      clearTimeout(this.timerMensagem)
+      this.mensagem = texto
+      this.mensagemTipo = tipo
+      this.timerMensagem = setTimeout(() => {
+        this.mensagem = ''
+      }, 2500)
+    },
+
+    limparNome(valor) {
+      return String(valor)
+      .replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '')
+      .toLowerCase()
+      .replace(/(^|\s)\S/g, letra => letra.toUpperCase())
+      .trim()
+      .replace(/\s+/g, ' ')
+    },
+
+    filtrarNome() {
+      this.nome = this.limparNome(this.nome)
+    },
+
   }
 }
 </script>
@@ -104,18 +178,16 @@ h2 { margin-bottom: 30px; }
   margin-bottom: 5px;
   cursor: pointer;
 }
+.caixaButton:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.caixaDiv {
-  background-color: gray;
-  padding: 3%;
-}
-
-.divDados {
-  text-align: left;
-  margin-left: 30px;
-  margin-bottom: 20px;
-}
-
-.erro { color: darkred; font-weight: bold; }
+.caixaDiv { background-color: gray; padding: 3%; }
+.divDados { text-align: left; margin-left: 30px; margin-bottom: 20px; }
 .resultado { margin-top: 15px; }
+
+.mensagem {
+  margin-top: 10px;
+  font-weight: bold;
+}
+.mensagem.ok    { color: #0a6b2a; }
+.mensagem.erro { color: #b40000; }
 </style>
