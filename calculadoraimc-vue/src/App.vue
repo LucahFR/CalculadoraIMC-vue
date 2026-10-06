@@ -112,8 +112,8 @@ export default {
     erroLimite() {
       const p = this.paraNumero(this.peso)
       const a = this.paraNumero(this.altura)
-      if (!isNaN(a) && a > ALTURA_MAX) return `Altura máxima permitida: ${ALTURA_MAX} m (recorde mundial).`
-      if (!isNaN(p) && p > PESO_MAX)   return `Peso máximo permitido: ${PESO_MAX} kg (recorde mundial).`
+      if (!isNaN(a) && a > ALTURA_MAX) return `Altura máxima permitida: ${ALTURA_MAX} m.`
+      if (!isNaN(p) && p > PESO_MAX)   return `Peso máximo permitido: ${PESO_MAX} kg.`
       return ''
     }
   },
@@ -157,7 +157,7 @@ export default {
       if (salvou) {
         this.recarregarPagina('Salvo no histórico!', 'sucesso')
       } else {
-        this.mostrarMensagem('Esse peso/altura já está no histórico.', 'erro')
+        this.mostrarMensagem('Esse peso ou altura já está no histórico.', 'erro')
       }
     },
 
