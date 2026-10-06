@@ -12,10 +12,9 @@ export const useImcStore = defineStore('imc', {
       )
 
       if (jaExiste) return false
-
-      this.historico.push(registro)
-      localStorage.setItem('historicoImc', JSON.stringify(this.historico))
-      return true
+        this.historico.push(registro)
+        localStorage.setItem('historicoImc', JSON.stringify(this.historico))
+        return true
     },
 
     limpar() {
