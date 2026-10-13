@@ -8,7 +8,7 @@
       <li v-for="(item, i) in lista" :key="i">
         <strong>{{ item.nome }}</strong> — {{ item.peso }} kg / {{ item.altura }} m
         → IMC <strong>{{ item.imc }}</strong> ({{ item.classificacao }})
-        <small> — {{ item.data }}</small>
+        <small>  {{ item.data }}</small>
       </li>
     </ul>
 
@@ -41,8 +41,8 @@ export default {
   background: #c0c0c0;
   padding: 10px;
   text-align: center;
-  margin-left: 250px;
-  margin-right: 265px;
+  margin-left: 220px;
+  margin-right: 183px;
 }
 
 .historico ul { list-style: none; padding: 0; }
