@@ -45,16 +45,12 @@
       </p>
     </div>
 
-    <historicoImc @limpar="onLimparHistorico" />
+    <historicoImc :lista="historico" @limpar="limparHistorico" />
   </div>
 </template>
 
 <script>
 import historicoImc from './components/historicoImc.vue'
-import { useImcStore } from './stores/imc'
-
-const ALTURA_MAX = 2.72
-const PESO_MAX   = 635
 
 export default {
   name: 'App',
@@ -67,114 +63,104 @@ export default {
       altura: '',
       mensagem: '',
       mensagemTipo: '',
-      timerMensagem: null
+      timerMensagem: null,
+      historico: []
     }
   },
 
   mounted() {
-    const formSalvo = sessionStorage.getItem('formTemp')
-    if (formSalvo) {
-      try {
-        const { nome, peso, altura } = JSON.parse(formSalvo)
-        this.nome   = nome   || ''
-        this.peso   = peso   || ''
-        this.altura = altura || ''
-      } catch (e) { /* ignora */ }
-      sessionStorage.removeItem('formTemp')
-    }
-
-    const msgSalva = sessionStorage.getItem('msgTemp')
-    if (msgSalva) {
-      try {
-        const { texto, tipo } = JSON.parse(msgSalva)
-        this.mostrarMensagem(texto, tipo)
-      } catch (e) { /* ignora */ }
-      sessionStorage.removeItem('msgTemp')
+    // pega o historico salvo
+    var salvo = localStorage.getItem('historicoImc')
+    if (salvo) {
+      this.historico = JSON.parse(salvo)
     }
   },
 
   computed: {
     imc() {
-      const p = this.paraNumero(this.peso)
-      const a = this.paraNumero(this.altura)
+      var p = this.paraNumero(this.peso)
+      var a = this.paraNumero(this.altura)
       if (isNaN(p) || p <= 0) return null
       if (isNaN(a) || a <= 0) return null
-      if (a > ALTURA_MAX) return null
-      if (p > PESO_MAX)   return null
+      if (a > 2.72) return null
+      if (p > 635) return null
       return p / (a * a)
     },
     resultado() {
-      return this.imc === null ? 'N/A' : this.imc.toFixed(2)
+      if (this.imc == null) {
+        return 'N/A'
+      }
+      return this.imc.toFixed(2)
     },
     classificacao() {
-      return this.imc === null ? '' : this.classificar(this.imc)
+      if (this.imc == null) {
+        return ''
+      }
+      if (this.imc < 18.5) return 'Abaixo do peso'
+      if (this.imc < 25) return 'Peso normal'
+      if (this.imc < 30) return 'Sobrepeso'
+      if (this.imc < 35) return 'Obesidade grau I'
+      if (this.imc < 40) return 'Obesidade grau II'
+      return 'Obesidade grau III'
     },
     erroLimite() {
-      const p = this.paraNumero(this.peso)
-      const a = this.paraNumero(this.altura)
-      if (!isNaN(a) && a > ALTURA_MAX) return `Altura máxima permitida: ${ALTURA_MAX} m.`
-      if (!isNaN(p) && p > PESO_MAX)   return `Peso máximo permitido: ${PESO_MAX} kg.`
+      var p = this.paraNumero(this.peso)
+      var a = this.paraNumero(this.altura)
+      if (!isNaN(a) && a > 2.72) {
+        return 'Altura máxima permitida: 2.72 m.'
+      }
+      if (!isNaN(p) && p > 635) {
+        return 'Peso máximo permitido: 635 kg.'
+      }
       return ''
     }
   },
 
   methods: {
-    limparNome(valor) {
-      return String(valor)
-        .replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '')
-        .toLowerCase()
-        .replace(/(^|\s)\S/g, l => l.toUpperCase())
-        .trim()
-        .replace(/\s+/g, ' ')
-    },
     filtrarNome() {
-      this.nome = this.limparNome(this.nome)
+      // tira numeros e simbolos do nome
+      this.nome = this.nome.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '')
     },
     paraNumero(valor) {
       return parseFloat(String(valor).replace(',', '.'))
     },
-    classificar(imc) {
-      if (imc < 18.5) return 'Abaixo do peso'
-      if (imc < 25)   return 'Peso normal'
-      if (imc < 30)   return 'Sobrepeso'
-      if (imc < 35)   return 'Obesidade grau I'
-      if (imc < 40)   return 'Obesidade grau II'
-      return 'Obesidade grau III'
-    },
-
     salvar() {
-      if (this.imc === null) return
+      if (this.imc == null) {
+        return
+      }
 
-      const salvou = useImcStore().adicionar({
-        nome: this.limparNome(this.nome) || 'Visitante',
-        peso: this.paraNumero(this.peso),
-        altura: this.paraNumero(this.altura),
+      var pesoNum = this.paraNumero(this.peso)
+      var alturaNum = this.paraNumero(this.altura)
+
+      // ve se ja tem
+      for (var i = 0; i < this.historico.length; i++) {
+        if (this.historico[i].peso == pesoNum && this.historico[i].altura == alturaNum) {
+          this.mostrarMensagem('Esse peso ou altura já está no histórico.', 'erro')
+          return
+        }
+      }
+
+      var registro = {
+        nome: this.nome || 'Visitante',
+        peso: pesoNum,
+        altura: alturaNum,
         imc: this.resultado,
         classificacao: this.classificacao,
         data: new Date().toLocaleString('pt-BR')
-      })
-
-      if (salvou) {
-        this.recarregarPagina('Salvo no histórico!', 'sucesso')
-      } else {
-        this.mostrarMensagem('Esse peso ou altura já está no histórico.', 'erro')
       }
-    },
 
-    onLimparHistorico() {
-      this.recarregarPagina('Histórico limpo!', 'sucesso')
-    },
+      this.historico.push(registro)
+      localStorage.setItem('historicoImc', JSON.stringify(this.historico))
 
-    recarregarPagina(texto, tipo) {
-      sessionStorage.setItem('formTemp', JSON.stringify({
-        nome:   this.nome,
-        peso:   this.peso,
-        altura: this.altura
-      }))
-      sessionStorage.setItem('msgTemp', JSON.stringify({ texto, tipo }))
-      location.reload()
-    },
+      console.log('salvou:', registro)
 
+      this.mostrarMensagem('Salvo no histórico!', 'ok')
+    },
+    limparHistorico() {
+      this.historico = []
+      localStorage.removeItem('historicoImc')
+      this.mostrarMensagem('Histórico limpo!', 'ok')
+    },
     mostrarMensagem(texto, tipo) {
       clearTimeout(this.timerMensagem)
       this.mensagem = texto

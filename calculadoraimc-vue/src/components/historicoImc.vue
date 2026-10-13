@@ -2,10 +2,10 @@
   <div class="historico">
     <h3>Histórico</h3>
 
-    <p v-if="imcStore.historico.length === 0">Nenhum registro ainda.</p>
+    <p v-if="lista.length == 0">Nenhum registro ainda.</p>
 
     <ul v-else>
-      <li v-for="(item, i) in imcStore.historico" :key="i">
+      <li v-for="(item, i) in lista" :key="i">
         <strong>{{ item.nome }}</strong> — {{ item.peso }} kg / {{ item.altura }} m
         → IMC <strong>{{ item.imc }}</strong> ({{ item.classificacao }})
         <small> — {{ item.data }}</small>
@@ -14,8 +14,8 @@
 
     <button
       class="caixaButton"
-      :disabled="imcStore.historico.length === 0"
-      @click="limpar"
+      :disabled="lista.length == 0"
+      @click="$emit('limpar')"
     >
       Limpar histórico
     </button>
@@ -23,21 +23,15 @@
 </template>
 
 <script>
-import { mapStores } from 'pinia'
-import { useImcStore } from '../stores/imc'
-
 export default {
   name: 'historicoImc',
-  emits: ['limpar'],
-  computed: {
-    ...mapStores(useImcStore)
-  },
-  methods: {
-    limpar() {
-      this.imcStore.limpar()
-      this.$emit('limpar')   
+  props: {
+    lista: {
+      type: Array,
+      required: true
     }
-  }
+  },
+  emits: ['limpar']
 }
 </script>
 
